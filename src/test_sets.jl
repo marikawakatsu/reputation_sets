@@ -25,14 +25,14 @@ using ReputationSets
 b = 1.0 # benefit to cooperating
 c = 0.5 # cost to cooperating
 
-N = 4 # population size
+N = 5 # population size
 M = 2 # number of sets
 
 δ = 0.1 # how much do aggregators favor their own set membership?
 ϵ = 0.2 # cutoff for aggregators
 w = 1.0 # selection strength
 μ = 0.1 # mutation rate between strategies
-u = 0.0 # error rate in choosing action
+u = 0.1 # error rate in choosing action
 
 sets = Sets(N, M)
 game = Game(b, c, δ, ϵ, w, μ, u)
