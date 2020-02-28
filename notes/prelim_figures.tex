@@ -1,0 +1,129 @@
+\documentclass[13pt]{amsart}
+
+\usepackage{amsfonts,latexsym,amsthm,amssymb,amsmath,amscd,euscript}
+\usepackage{fullpage}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{hyperref}
+\usepackage{mathtools}
+\usepackage{charter}
+\usepackage{natbib}
+
+\usepackage[dvipsnames]{xcolor}
+\usepackage[usenames,dvipsnames]{pstricks}
+
+\usepackage{hyperref}
+\hypersetup{
+    pdffitwindow=false,            % window fit to page
+    pdfstartview={Fit},            % fits width of page to window
+    pdftitle={Notes on NetworkLending},     % document title
+    pdfauthor={Taylor Kessinger},         % author name
+    pdfsubject={},                 % document topic(s)
+    pdfnewwindow=true,             % links in new window
+    colorlinks=true,               % coloured links, not boxed
+    linkcolor=OrangeRed,      % colour of internal links
+    citecolor=ForestGreen,       % colour of links to bibliography
+    filecolor=Orchid,            % colour of file links
+    urlcolor=Cerulean           % colour of external links
+}
+
+\newcommand{\B}{\mathcal{B}}
+\newcommand{\C}{\mathcal{C}}
+
+\begin{document}
+
+These are some early simulation results from \texttt{ReputationSets}.
+Some initial observations:
+\begin{itemize}
+    \item Overall, being a forgiving aggregator seems to be a higher fitness state than being a compartmentalizer, though this varies by parameter value.
+    \item Draconian aggregators are almost always disfavored.
+    \item Early plots vary in terms of $u_p$ and $u_a$ (the error rates in assigning reputation and choosing action, respectively).
+    Unsurprisingly, we find that ramping these up generally makes cooperation more difficult to achieve.
+    \item We also try varying $c$, the cost of cooperation, but so far no systemic effect is to be observed.
+    \item Finally, in later plots, we vary $M$ (the total number of sets) and $K$ (the number of sets to which each individual belongs).
+    Cooperation appears to tend toward a value of $K/M$, which is perhaps unusual.
+\end{itemize}
+
+\begin{itemize}
+
+\end{itemize}
+
+\clearpage
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_1.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_2.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_3.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_4.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_5.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_6.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_7.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_8.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_9.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_10.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_11.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_12.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_13.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_14.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_15.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_16.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_17.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_18.pdf}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_19.pdf}
+\end{figure}
+
+
+\end{document}

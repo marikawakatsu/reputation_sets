@@ -20,12 +20,14 @@
 
 module ReputationSets
 
-	using Random, StatsBase
+	using Random, StatsBase, Combinatorics
 
 	export Sets, Game, Population
+	export random_sets, equal_sets
 	export evolve!
 	export aggregator_reputation
-	export update_strategies!, update_reputations_and_attitudes!, update_actions_and_fitnesses!
+	export update_strategies_db!, update_strategies_pc!
+	export update_reputations_and_attitudes!, update_actions_and_fitnesses!
 
 	struct Sets
 		# structure for storing information about set membership
@@ -39,39 +41,14 @@ module ReputationSets
 		# call h[:, k] to get all members of set k
 		# or h[i, :] to get all of i's set membership
 
-		# constructor for randomized set membership
-		function Sets(
-			N::Int64,
-			M::Int64
-			)
-			# populate the sets randomly
-			h = rand([false, true], N, M)
-			# ensure each individual appears in at least one set
-			for i in 1:N
-				if all([h[i,k] == false for k in 1:M])
-					h[i, rand(1:M)] = true
-				end
-			end
-			# also ensure each set has at least two members
-			for k in 1:M
-				if sum(h[:,k]) == 0
-					h[sample(1:N, 2), k] .= true
-				elseif sum(h[:,k]) == 1
-					h[rand(filter(x -> h[x,k] != true, 1:N)), k] = true
-				end
-			end
-			# set_members is a list of lists of individuals in each set
-			# set_pairs is a list of tuples
-			# each tuple is a pair of individuals in that set
-			set_members, set_pairs = set_members_and_pairs(h)
-			return new(N, M, set_members, set_pairs, h)
-		end
-
 		# constructors for pre-specified set membership
 		function Sets(
 			h::Array{Bool, 2}
 			)
 			N, M = size(h)
+			# set_members is a list of lists of individuals in each set
+			# set_pairs is a list of tuples
+			# each tuple is a pair of individuals in that set
 			set_members, set_pairs = set_members_and_pairs(h)
 			return new(N, M, set_members, set_pairs, h)
 		end
@@ -85,6 +62,47 @@ module ReputationSets
 		end
 	end
 
+	# constructor for randomized set membership
+	function random_sets(
+		N::Int64,
+		M::Int64
+		)
+		# populate the sets randomly
+		h = rand([false, true], N, M)
+		# ensure each individual appears in at least one set
+		for i in 1:N
+			if all([h[i,k] == false for k in 1:M])
+				h[i, rand(1:M)] = true
+			end
+		end
+		# also ensure each set has at least two members
+		for k in 1:M
+			if sum(h[:,k]) == 0
+				h[sample(1:N, 2), k] .= true
+			elseif sum(h[:,k]) == 1
+				h[rand(filter(x -> h[x,k] != true, 1:N)), k] = true
+			end
+		end
+		return Sets(h)
+	end
+
+	function equal_sets(
+		# constructor for each individual belonging to the same
+		# number of (equally sized) sets
+		N::Int64,
+		M::Int64,
+		K::Int64 # the number of sets each individual will belong to
+		)
+		set_ids = collect(combinations(1:M, K))
+		rand_indvs = randperm(N)
+		h = zeros(Bool, N, M)
+		for (i, ii) in enumerate(rand_indvs)
+			si = ii%(length(set_ids))+1
+			h[i,set_ids[si]] .= true
+		end
+		return Sets(h)
+	end
+
 	struct Game
 		# structure for storing game parameters and such
 
@@ -93,8 +111,10 @@ module ReputationSets
 		δ::Float64 # how much aggregators favor own-set interactions
 		ϵ::Float64 # aggregator cutoff
 		w::Float64 # selection strength
-		μ::Float64 # mutation rate
-		u::Float64 # probability of choosing the "wrong" action
+		u_s::Float64 # mutation rate
+		u_p::Float64 # probability of choosing the "wrong" action
+		u_a::Float64 # probability of incorrectly assigning reputation
+		update_rule::String # update rule: PC or death-birth
 		A::Array{Float64, 2} # the actual game matrix
 
 		function Game(
@@ -103,10 +123,27 @@ module ReputationSets
 			δ::Float64,
 			ϵ::Float64,
 			w::Float64,
-			μ::Float64,
-			u::Float64
+			u_s::Float64,
+			u_p::Float64,
+			u_a::Float64,
+			update_rule::String
 			)
-			return new(b, c, δ, ϵ, w, μ, u, [0.0 -c; b b-c])
+			return new(b, c, δ, ϵ, w, u_s, u_p, u_a,
+				update_rule, [0.0 -c; b b-c])
+		end
+
+		function Game(
+			b::Float64,
+			c::Float64,
+			δ::Float64,
+			ϵ::Float64,
+			w::Float64,
+			u_s::Float64,
+			u_p::Float64,
+			u_a::Float64,
+			)
+			return new(b, c, δ, ϵ, w, u_s, u_p, u_a,
+				"death-birth", [0.0 -c; b b-c])
 		end
 	end
 
@@ -177,7 +214,30 @@ module ReputationSets
 		return set_members, set_pairs
 	end
 
-	function update_strategies!(
+	function update_strategies_db!(
+		pop::Population
+		)
+		# randomly choose someone to die
+		invadee = sample(1:pop.sets.N)
+		# compute the fitnesses of every other individual in the population
+		invasion_fitnesses = 1.0 .- pop.game.w .+ pop.game.w*pop.fitnesses[filter(x->x!=invadee, 1:pop.sets.N)]
+		# choose a random other individual in the population, weighted by fitness0
+		invader = sample(filter(x->x!=invadee, collect(1:pop.sets.N)), Weights(invasion_fitnesses))
+		# the chosen individual's strategy replaces the deceased
+		if pop.verbose println("randomly chosen invader $invader and invadee $invadee") end
+		if pop.verbose println("fitnesses are $(pop.fitnesses[invader]) and $(pop.fitnesses[invadee])") end
+		if pop.verbose println("all fitnesses are $(pop.fitnesses)") end
+		if rand() < pop.game.u_s
+			# this is where we allow the invadee to mutate
+			pop.strategies[invadee] = rand(filter(x->x!=pop.strategies[invader], collect(0:2)))
+			if pop.verbose println("mutating $invadee to strategy $(pop.strategies[invadee])") end
+		else
+			pop.strategies[invadee] = pop.strategies[invader]
+			if pop.verbose println("adopting strategy $(pop.strategies[invadee])") end
+		end
+	end
+
+	function update_strategies_pc!(
 		pop::Population
 		)
 		# chooses a random pair of individuals to compare via a sigmoid function
@@ -191,7 +251,7 @@ module ReputationSets
 		if pop.verbose println("fitnesses are $(pop.fitnesses[invader]) and $(pop.fitnesses[invadee])") end
 		if pop.verbose println("update function is $update_function") end
 		if rand() < update_function
-			if rand() < pop.game.μ
+			if rand() < pop.game.u_s
 				# this is where we allow the invadee to mutate
 				pop.strategies[invadee] = rand(filter(x->x!=pop.strategies[invader], collect(0:2)))
 				if pop.verbose println("mutating $invadee to strategy $(pop.strategies[invadee])") end
@@ -209,6 +269,7 @@ module ReputationSets
 		# the main evolution function
 		# generations allows us to specify how many generations to let the simulation run for
 		# we first need to choose actions and update fitnesses
+		if pop.verbose println("initiating generation $(pop.generation)") end
 		if pop.verbose println("updating actions and fitnesses") end
 		update_actions_and_fitnesses!(pop)
 		# then make sure everyone's reputation and attitudes are updated
@@ -216,7 +277,11 @@ module ReputationSets
 		update_reputations_and_attitudes!(pop)
 		# then, finally, select a pair of individuals whose fitnesses we will compare
 		if pop.verbose println("evolving, generation $(pop.generation)") end
-		update_strategies!(pop)
+		if pop.game.update_rule ∈ ["pc", "pairwise_comparison", "im", "imitation"]
+			update_strategies_pc!(pop)
+		elseif pop.game.update_rule ∈ ["db", "death_birth"]
+			update_strategies_db!(pop)
+		end
 	end
 
 
@@ -235,17 +300,17 @@ module ReputationSets
 			for (i, j) in pop.sets.set_pairs[k]
 				if pop.verbose println("updating actions of $i and $j in set $k") end
 				# check i's attitude toward j within set k
-				# with probability 1-u, they cooperate if j is good and defect if j is bad
-				# with probability u, the opposite
-				rand() > pop.game.u ? i_action = pop.attitudes[k,i,j] : i_action = 1 - pop.attitudes[k,i,j]
+				# with probability 1-u_p, they cooperate if j is good and defect if j is bad
+				# with probability u_p, the opposite
+				rand() > pop.game.u_p ? i_action = pop.attitudes[k,i,j] : i_action = 1 - pop.attitudes[k,i,j]
 				# repeat with j
-				rand() > pop.game.u ? j_action = pop.attitudes[k,j,i] : j_action = 1 - pop.attitudes[k,j,i]
+				rand() > pop.game.u_p ? j_action = pop.attitudes[k,j,i] : j_action = 1 - pop.attitudes[k,j,i]
 				if pop.verbose println("$i's attitude toward $j is $(pop.attitudes[k,i,j]), so $i does $i_action") end
 				if pop.verbose println("$j's attitude toward $i is $(pop.attitudes[k,j,i]), so $j does $j_action") end
 				if pop.verbose println("$i earns a payoff of $(pop.game.A[i_action+1, j_action+1])") end
 				if pop.verbose println("$j earns a payoff of $(pop.game.A[j_action+1, i_action+1])") end
 				# adjust i and j's fitnesses according to their strategies and the game matrix
-				new_fitnesses[i] += pop.game.A[i_action+1, j_action+1]
+				new_fitnesses[i] += pop.game.A[i_action+1, j_action+1] # +1 because julia is 1-indexed
 				new_fitnesses[j] += pop.game.A[j_action+1, i_action+1]
 				# store their last actions toward each other in this set
 				new_actions[k,i,j] = i_action
@@ -277,7 +342,7 @@ module ReputationSets
 				j = rand(filter(x -> x != i, pop.sets.set_members[k]))
 				action = pop.prev_actions[k,i,j]
 				# apply the stern judging norm to determine i's reputation within set k
-				new_reputations[k,i] = stern_judging_norm(action, pop.reputations[k,j])
+				rand() > pop.game.u_a ? new_reputations[k,i] = stern_judging_norm(action, pop.reputations[k,j]) : new_reputations[k,i] = 1 - stern_judging_norm(action, pop.reputations[k,j])
 				if pop.verbose
 					println("in set $k, $i's behavior toward $j is analyzed")
 					println("$i did $action and $j's reputation is $(pop.reputations[k,j])")
