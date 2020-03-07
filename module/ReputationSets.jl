@@ -269,18 +269,20 @@ module ReputationSets
 		# the main evolution function
 		# generations allows us to specify how many generations to let the simulation run for
 		# we first need to choose actions and update fitnesses
-		if pop.verbose println("initiating generation $(pop.generation)") end
-		if pop.verbose println("updating actions and fitnesses") end
-		update_actions_and_fitnesses!(pop)
-		# then make sure everyone's reputation and attitudes are updated
-		if pop.verbose println("updating reputations and attitudes") end
-		update_reputations_and_attitudes!(pop)
-		# then, finally, select a pair of individuals whose fitnesses we will compare
-		if pop.verbose println("evolving, generation $(pop.generation)") end
-		if pop.game.update_rule ∈ ["pc", "pairwise_comparison", "im", "imitation"]
-			update_strategies_pc!(pop)
-		elseif pop.game.update_rule ∈ ["db", "death_birth"]
-			update_strategies_db!(pop)
+		for i in 1:generations
+			if pop.verbose println("initiating generation $(pop.generation)") end
+			if pop.verbose println("updating actions and fitnesses") end
+			update_actions_and_fitnesses!(pop)
+			# then make sure everyone's reputation and attitudes are updated
+			if pop.verbose println("updating reputations and attitudes") end
+			update_reputations_and_attitudes!(pop)
+			# then, finally, select a pair of individuals whose fitnesses we will compare
+			if pop.verbose println("evolving, generation $(pop.generation)") end
+			if pop.game.update_rule ∈ ["pc", "pairwise_comparison", "im", "imitation"]
+				update_strategies_pc!(pop)
+			elseif pop.game.update_rule ∈ ["db", "death_birth"]
+				update_strategies_db!(pop)
+			end
 		end
 	end
 

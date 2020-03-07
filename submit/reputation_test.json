@@ -1,0 +1,34 @@
+{
+  "N":
+  {
+    "value": 100
+  },
+  "M":
+  {
+    "value": [3, 4, 5]
+  },
+  "K":
+  {
+    "value": [2, 3]
+  },
+  "b":
+  {
+    "value": 1.0
+  },
+  "c":
+  {
+    "value": [0.1, 0.5, 0.9]
+  },
+  "num_samples":
+  {
+    "value": 100
+  },
+  "num_trials":
+  {
+    "value": 1
+  },
+  "output":
+  {
+    "value": "output/reputation_initial_test_large.csv"
+  }
+}

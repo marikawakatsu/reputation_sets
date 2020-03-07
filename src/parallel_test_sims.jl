@@ -78,7 +78,7 @@ end
 function main(args)
 
     s = ArgParseSettings(description =
-        "run NetworkLending simulations across multiple cores")
+        "run ReputationSets simulations across multiple cores")
     @add_arg_table s begin
         "--ncpus"
             arg_type = Int64
@@ -103,6 +103,7 @@ function main(args)
 		"u_p"     => Dict("value" => 0.01,     "type" => Float64),
 		"u_a"     => Dict("value" => 0.01,     "type" => Float64),
         "num_samples" => Dict("value" => 5, "type" => Int64),
+        "num_trials" => Dict("value" => 10, "type" => Int64),
         "output" => Dict("value" => "output/test.csv", "type" => String)
     ])
     pars = read_parameters(defpars, parsed_args["input"])
@@ -120,7 +121,7 @@ function main(args)
     [@everywhere workers() push!(LOAD_PATH, $x) for x in extradir]
     @everywhere workers() eval(:(using Random))
     @everywhere workers() eval(:(using Statistics))
-    @everywhere workers() eval(:(using NetworkLending))
+    @everywhere workers() eval(:(using ReputationSets))
     @everywhere workers() eval(:(using Dates))
 
     inputs  = RemoteChannel(()->Channel{Dict}(2 * nsets * maximum(pars["num_trials"])))
@@ -137,6 +138,9 @@ function main(args)
             N = pard["N"]
 			M = pard["M"]
 			K = pard["K"]
+
+			b = pard["b"]
+			c = pard["c"]
 
 			δ = pard["δ"]
 			ϵ = pard["ϵ"]
@@ -156,7 +160,7 @@ function main(args)
 			game = Game(b, c, δ, ϵ, w, u_s, u_p, u_a, "db")
 			pop = Population(sets, game, false)
 
-			num_gens = 10000
+			sampling_interval = N^2÷10
 			total_interactions = 2.0*sum([length(x) for x in sets.set_pairs])
 
 			total_cooperation = Float64[]
@@ -166,8 +170,8 @@ function main(args)
 
 			evolve!(pop)
 
-			for g in 1:num_gens
-				evolve!(pop)
+			for g in 1:num_samples
+				evolve!(pop, sampling_interval)
 				push!(total_cooperation, sum(pop.prev_actions)/total_interactions)
 				push!(fitness_means, mean(pop.fitnesses))
 				gen_freqs = zeros(Float64, 3)
@@ -178,17 +182,17 @@ function main(args)
 				push!(strat_fitness_means, gen_means)
 			end
 
-			strategy_freqs_array = zeros(Float64, num_gens, 3)
-			fitness_means_array = zeros(Float64, num_gens, 3)
-			for g in 1:num_gens
+			strategy_freqs_array = zeros(Float64, num_samples, 3)
+			fitness_means_array = zeros(Float64, num_samples, 3)
+			for g in 1:num_samples
 				strategy_freqs_array[g,:] = strategy_freqs[g]
 				fitness_means_array[g,:] = strat_fitness_means[g]
 			end
-            mean_freqs = ft.freqs[end,:]
-            generation = pop.generation
             #mean_freqs = [sum(indv==x for indv in pop.lattice)*1.0/N^2 for x in types_to_compete]
-            pard["mean_freqs"] = mean_freqs
-            pard["generations"] = generation
+            pard["strat_fitness_means"] = fitness_means_array
+			pard["fitness_means"] = fitness_means
+			pard["strategy_freqs"] = strategy_freqs_array
+			pard["total_cooperation"] = total_cooperation
 
             # return data to master process
             put!(results, pard)
@@ -225,7 +229,7 @@ function main(args)
     println(output)
     file = occursin(r"\.csv$", output) ? output : output * ".csv"
     cols = push!(sort(collect(keys(pars))),
-                 ["rep", "mean_freqs", "generations", "seed1", "seed2", "seed3", "seed4"]...)
+                 ["rep", "strat_fitness_means", "fitness_means", "strategy_freqs", "total_cooperation", "seed1", "seed2", "seed3", "seed4"]...)
     dat = DataFrame(Dict([(c, Any[]) for c in cols]))
 
     # grab results and output to CSV
@@ -246,4 +250,4 @@ end
 
 #main(ARGS)
 
-main(["--input", "submit/test_r_z_big_fixation_3strat_hoarding.json"])
+main(["--input", "submit/reputation_test.json"])
