@@ -339,7 +339,8 @@ module ReputationSets
 		# for each set
 		for k in 1:pop.sets.M
 			# for each individual
-			for i in 1:length(pop.sets.set_members[k])
+			#for i in 1:length(pop.sets.set_members[k])
+			for i in pop.sets.set_members[k]
 				# check a random other individual j and see what i did to j
 				j = rand(filter(x -> x != i, pop.sets.set_members[k]))
 				action = pop.prev_actions[k,i,j]

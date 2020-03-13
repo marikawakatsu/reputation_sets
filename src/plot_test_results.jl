@@ -10,11 +10,12 @@
 using CSV, PyPlot, Statistics, NetworkLending
 
 # load simulation output as a dataframe
-runs = CSV.read("output/reputation_initial_test.csv")
+runs = CSV.read("output/reputation_vary_u.csv")
+save_fig = false
 
 # dicts to store fixation probabilities
-type_freqs = Dict{Tuple{Int64, Int64, Float64},Array{Float64, 1}}()
-coop_freqs = Dict{Tuple{Int64, Int64, Float64},Float64}()
+type_freqs = Dict{Tuple{Int64, Int64, Float64, Float64, Float64},Array{Float64, 1}}()
+coop_freqs = Dict{Tuple{Int64, Int64, Float64, Float64, Float64},Float64}()
 
 N = sort(unique(runs[:N]))[1]
 
@@ -22,25 +23,27 @@ N = sort(unique(runs[:N]))[1]
 M_vals = sort(unique(runs[:M]))
 K_vals = sort(unique(runs[:K]))
 c_vals = sort(unique(runs[:c]))
+ua_vals = sort(unique(runs[:u_a]))
+up_vals = sort(unique(runs[:u_p]))
 
-param_combs = collect(Base.product(M_vals, K_vals, c_vals))
+param_combs = collect(Base.product(M_vals, K_vals, c_vals, ua_vals, up_vals))
 
 for (pi, param_comb) in enumerate(param_combs)
-    M, K, c = param_comb
+    M, K, c, u_a, u_p = param_comb
     #println("$param_comb")
     type_freqs[param_comb] = zeros(Float64, 3)
     coop_freqs[param_comb] = 0.0
-    tmp_runs = runs[(runs[:M] .== M) .& (runs[:K] .== K) .& (runs[:c] .== c), :]
-    for (ri, run) in enumerate(eachrow(tmp_runs[:,:]))
+    tmp_runs = runs[(runs[:M] .== M) .& (runs[:K] .== K) .& (runs[:c] .== c) .& (runs[:u_a] .== u_a) .& (runs[:u_p] .== u_p), :]
+	for (ri, run) in enumerate(eachrow(tmp_runs[:,:]))
         strat_rows = split.(run[:strategy_freqs][2:end-1], ";")
         coop_rows = split.(run[:total_cooperation][2:end-1], r", ")
         for (ri, row) in enumerate(strat_rows)
-            println("$row")
+            #println("$row")
             if ri > 1
                 row = row[2:end]
             end
             freqs = parse.(Float64,String.(split(row, " ")))
-            println("$freqs")
+            #println("$freqs")
             type_freqs[param_comb] += freqs/size(tmp_runs, 1)/run[:num_samples]
         end
         for (ri, row) in enumerate(coop_rows)
@@ -59,17 +62,35 @@ freqbar = [[type_freqs[pc][i] for pc in param_combs] for i in 1:3]
 fig = plt.figure()
 
 #for pc in param_combs
-plt.bar(ind, freqbar[1])
-plt.bar(ind, freqbar[2], bottom=freqbar[1])
-plt.bar(ind, freqbar[3], bottom=freqbar[2]+freqbar[1])
+plt.bar(ind, freqbar[1], label="compartmentalizer")
+plt.bar(ind, freqbar[2], bottom=freqbar[1], label="forgiving")
+plt.bar(ind, freqbar[3], bottom=freqbar[2]+freqbar[1], label="draconian")
+plt.title("type frequencies")
 plt.xticks(ind, param_combs, rotation=90)
-
+plt.xlabel("M, K, c")
+plt.ylabel("frequency")
+plt.legend(loc=1)
+plt.tight_layout()
 display(fig)
+
+if save_fig
+    plt.savefig("figures/prelim_type_frequencies_redo.pdf")
+end
 
 fig = plt.figure()
-plt.plot(ind, [coop_freqs[pc] for pc in param_combs])
+plt.bar(ind, [coop_freqs[pc] for pc in param_combs])
 plt.xticks(ind, param_combs, rotation=90)
+plt.ylabel("frequency")
+plt.title("cooperation fraction")
+plt.ylim([0,1])
+plt.xlabel("M, K, c")
+plt.tight_layout()
 display(fig)
+
+if save_fig
+    plt.savefig("figures/prelim_coop_frequencies_redo.pdf")
+end
+
 #
 # zmin, zmax, rmin, rmax = z_vals[1], z_vals[end], r_vals[1], r_vals[end]
 # scaling = (zmax-zmin)/(rmax-rmin)

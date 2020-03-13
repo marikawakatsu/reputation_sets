@@ -160,7 +160,7 @@ function main(args)
 			game = Game(b, c, δ, ϵ, w, u_s, u_p, u_a, "db")
 			pop = Population(sets, game, false)
 
-			sampling_interval = N^2÷10
+			sampling_interval = N
 			total_interactions = 2.0*sum([length(x) for x in sets.set_pairs])
 
 			total_cooperation = Float64[]
@@ -169,6 +169,8 @@ function main(args)
 			strat_fitness_means = Array{Float64, 1}[]
 
 			evolve!(pop)
+
+			evolve!(pop, N^2)
 
 			for g in 1:num_samples
 				evolve!(pop, sampling_interval)
@@ -250,4 +252,4 @@ end
 
 #main(ARGS)
 
-main(["--input", "submit/reputation_test.json"])
+main(["--input", "submit/u_val.json"])

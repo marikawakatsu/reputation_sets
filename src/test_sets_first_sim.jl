@@ -23,24 +23,24 @@ using Revise, StatsBase, PyPlot, Profile
 using ReputationSets
 
 b = 1.0 # benefit to cooperating
-c = 0.1 # cost to cooperating
+c = 0.9 # cost to cooperating
 
 N = 100 # population size
-M = 1 # number of sets
-K = 1
+M = 5 # number of sets
+K = 2
 
 δ = 0.0 # how much do aggregators favor their own set membership?
 ϵ = 0.1 # cutoff for aggregators
 w = 1.0/N # selection strength
 u_s = 1.0/N # mutation rate between strategies
-u_p = 10.0/N # error rate in choosing action
-u_a = 10.0/N # error rate in assigning reputation
+u_p = 1.0/N # error rate in choosing action
+u_a = 1.0/N # error rate in assigning reputation
 
 sets = equal_sets(N, M, K)
 game = Game(b, c, δ, ϵ, w, u_s, u_p, u_a, "db")
 pop = Population(sets, game, false)
 
-num_gens = 100
+num_gens = 10000
 total_interactions = 2.0*sum([length(x) for x in sets.set_pairs])
 
 total_cooperation = Float64[]

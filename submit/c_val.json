@@ -5,11 +5,11 @@
   },
   "M":
   {
-    "value": [3, 4, 5]
+    "value": [3]
   },
   "K":
   {
-    "value": [2, 3]
+    "value": [2]
   },
   "b":
   {
@@ -17,7 +17,7 @@
   },
   "c":
   {
-    "value": [0.1, 0.5, 0.9]
+    "value": [0.1, 0.3, 0.5, 0.7, 0.9]
   },
   "num_samples":
   {
@@ -25,10 +25,10 @@
   },
   "num_trials":
   {
-    "value": 1
+    "value": 5
   },
   "output":
   {
-    "value": "output/reputation_initial_test_2.csv"
+    "value": "output/reputation_vary_c.csv"
   }
 }

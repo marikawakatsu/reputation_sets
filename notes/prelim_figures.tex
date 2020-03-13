@@ -31,98 +31,187 @@
 
 \begin{document}
 
+\section*{Overview of preliminary \texttt{ReputationSets} simulation results}
+
 These are some early simulation results from \texttt{ReputationSets}.
+
+Simulation code, as always, can be found at
+\url{https://github.com/tkessinger/reputation_sets}.
+
+A brief overview:
+$N$ individuals are organized into $M$ sets.
+Each individual, furthermore, belongs to $K$ of those $M$ sets (randomly assigned for now).
+In each set, individuals then play a donation game with every other individual in that set.
+(This means individuals who share more than one set with another individual will play the donation game with them more than once.)
+
+Each individual has a public \emph{reputation} within each set, and individuals have \emph{strategies} for aggregating those reputations into (what I am calling) \emph{attitudes}.
+The \emph{attitude} determines what strategy they play in each set: individual $i$ uses a stern judging/DISC norm for determining which strategy to play based on $i$'s attitude toward player $j$.
+Each individual has one of three rules for determining attitudes:
+\begin{itemize}
+    \item \emph{compartmentalizer}.
+    $i$'s action toward $j$ in set $k$ is determined solely by $j$'s public reputation \emph{in set} $k$.
+    \item \emph{forgiving aggregator}.
+    If $j$ has a \emph{good} reputation in at least one set, $i$ will cooperate with them in all sets.
+    Else, $i$ will defect.
+    \item \emph{draconian aggregator}.
+    If $j$ has a \emph{bad} reputation in at least one set, $i$ will defect with them in all sets.
+    Else, $i$ will cooperate.
+\end{itemize}
+There is an error rate $u_p$ of choosing the wrong action and $u_a$ of assigning the wrong (public) reputation.
+Individuals then follow a death-birth rule for updating their assessment strategy (with mutation probability $u_a$ and selection strength $w$).
+We summarize these parameters in table \ref{tab:param_table}.
+\begin{center}
+    \begin{table}[h]
+        \begin{tabular}{| c | l |}
+        \hline
+        parameter & meaning \\
+        \hline
+         $N$ & total population size \\
+         $M$ & total number of sets \\
+         $K$ & number of sets each player belongs to \\
+         $b$ & benefit to cooperation \\
+         $c$ & cost to cooperation \\
+         $w$ & strength of selection \\
+         $u_p$ & error rate in choosing action \\
+         $u_a$ & error rate in assigning (public) reputation \\
+         $u_s$ & mutation rate between assessment strategies \\
+         \hline
+        \end{tabular}
+        \caption{Summary of simulation parameters.}
+    \label{tab:param_table}
+    \end{table}
+\end{center}
+
+Following are some initial serial simulation results (averaged over multiple simulation runs), as well as some individual time series from simulations.
+
+\clearpage
+
+\subsection*{Initial serial simulations}
+
+We varied $M \in \{3, 4, 5\}$, $K \in \{2, 3\}$, and $c \in \{0.1, 0.5, 0.9\}$ and tracked the frequencies of each individual type, as well as the proportion of total interactions in which individuals chose to cooperate.
+In these simulations we set $N = 100$, $u_a = u_p = u_s = w = 1/N$, and $b = 1$.
+In figure \ref{fig:prelim_type_freq}, each set of bars represents averaged strategy frequencies from a single simulation run, sampled every $100$ Moran generations \emph{after} an initial equilibration time of $N = 10000$ Moran generations.
+In figure \ref{fig:prelim_coop_freq}, each bar represents the average frequency of cooperation from the same run (as a fraction of the total number of interactions).
+In future simulations we will vary just one parameter at a time to get a better idea of how type frequencies are affected \emph{ceteris paribus}.
+
+\clearpage
+
+\begin{figure}[h]
+    \includegraphics[width=0.65\textwidth]{../figures/prelim_type_frequencies_redo.pdf}
+    \caption{Frequencies of different assessment strategies.
+    Generally, being a forgiving aggregator pays off.
+    We will probably have to be clever if we want to see other strategies succeed.}
+    \label{fig:prelim_type_freq}
+\end{figure}
+\begin{figure}[h]
+    \includegraphics[width=0.65\textwidth]{../figures/prelim_coop_frequencies_redo.pdf}
+    \caption{Fraction of total interactions in which individuals cooperated.
+    The fraction is close to $1$, generally.
+    It is instructive to note that in the $(5,2,0.1)$ example, the cooperation fraction was lowest, and the frequency of draconian aggregators (see figure \ref{fig:prelim_type_freq} above) was highest.}
+    \label{fig:prelim_coop_freq}
+\end{figure}
+
+\clearpage
+
+\subsection*{Time series}
+
+Following are some individual time series showing (on the left) the cooperation fraction and the trajectory of individual types and (on the right) the mean fitness, both of the entire population and of each individual type.
+Parameters $b, c, N, M, K, w, u_s, u_p, u_a$ are shown in the title of each plot.
+We vary them as follows:
+\begin{itemize}
+    \item In figures \ref{fig:prelim_1} through \ref{fig:prelim_3}, we keep all parameters the same to get an idea of replicability.
+    \item In figures \ref{fig:prelim_4} and \ref{fig:prelim_5}, we raise and lower the error rates $u_p$ and $u_a$.
+    \item In figures \ref{fig:prelim_6} and \ref{fig:prelim_7}, we raised $c$ to $0.5$ and then $0.9$.
+    \item In figures \ref{fig:prelim_8} through \ref{fig:prelim_10}, we vary $M$ and $K$.
+    \item Finally, in figures \ref{fig:prelim_11} and \ref{fig:prelim_12}, we lower and raise $N$ by a factor of two.
+\end{itemize}
+
 Some initial observations:
 \begin{itemize}
     \item Overall, being a forgiving aggregator seems to be a higher fitness state than being a compartmentalizer, though this varies by parameter value.
     \item Draconian aggregators are almost always disfavored.
-    \item Early plots vary in terms of $u_p$ and $u_a$ (the error rates in assigning reputation and choosing action, respectively).
-    Unsurprisingly, we find that ramping these up generally makes cooperation more difficult to achieve.
-    \item We also try varying $c$, the cost of cooperation, but so far no systemic effect is to be observed.
-    \item Finally, in later plots, we vary $M$ (the total number of sets) and $K$ (the number of sets to which each individual belongs).
-    Cooperation appears to tend toward a value of $K/M$, which is perhaps unusual.
-\end{itemize}
-
-\begin{itemize}
-
+    \item Unsurprisingly, higher $u_p$ and $u_a$ deter cooperation.
+    \item There is no obvious systemic effect of changing $c$ or of changing $M$ and $K$.
+    \item Raising $N$ might help draconian aggregators, though it is not obvious why this would be the case.
 \end{itemize}
 
 \clearpage
 
-\begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_1.pdf}
+\begin{figure}[h]
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_1.pdf}
+    \caption{A run with ``default'' parameter values.
+    Compartmentalizers and forgiving aggregators fare well.}
+    \label{fig:prelim_1}
+\end{figure}
+
+\begin{figure}[h]
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_2.pdf}
+    \caption{Same parameters as figure \ref{fig:prelim_1}.}
+    \label{fig:prelim_2}
+\end{figure}
+
+\begin{figure}[h]
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_3.pdf}
+    \caption{Same parameters as figure \ref{fig:prelim_1}.}
+    \label{fig:prelim_3}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_2.pdf}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_4.pdf}
+    \caption{A run with increased $u_p$ and $u_a$ (higher error rates).
+    Note the lower cooperation fraction.}
+    \label{fig:prelim_4}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_3.pdf}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_5.pdf}
+    \caption{A run with decreased $u_p$ and $u_a$.
+    Draconian aggregators do strangely well here, it seems.}
+    \label{fig:prelim_5}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_4.pdf}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_6.pdf}
+    \caption{Increasing $c$ from $0.1$ to $0.5$ seems to favor forgiving aggregators even more.}
+    \label{fig:prelim_6}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_5.pdf}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_7.pdf}
+    \caption{Increasing $c$ further to $0.9$.
+    Compartmentalizers are ultimately overtaken by forgiving aggregators.}
+    \label{fig:prelim_7}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_6.pdf}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_8.pdf}
+    \caption{Decreasing the number of sets $M$ to $2$ (so that everyone is now in every set) seems to slightly change the dynamics.}
+    \label{fig:prelim_8}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_7.pdf}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_9.pdf}
+    \caption{Increasing the number of sets $M$ to $4$.}
+    \label{fig:prelim_9}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_8.pdf}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_10.pdf}
+    \caption{Increasing the number of sets $M$ to $4$ and $K$ to $3$.}
+    \label{fig:prelim_10}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_9.pdf}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_11.pdf}
+    \caption{Decreasing $N$ to $50$.}
+    \label{fig:prelim_11}
 \end{figure}
 
 \begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_10.pdf}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_11.pdf}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_12.pdf}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_13.pdf}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_14.pdf}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_15.pdf}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_16.pdf}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_17.pdf}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_18.pdf}
-\end{figure}
-
-\begin{figure}
-    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_19.pdf}
+    \includegraphics[width=0.85\textwidth]{../figures/simulation_run_redo_12.pdf}
+    \caption{Increasing $N$ to $200$.
+    Note that this is now less than $N$ full Moran generations.}
+    \label{fig:prelim_12}
 \end{figure}
 
 

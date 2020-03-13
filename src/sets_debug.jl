@@ -33,14 +33,14 @@ K = 1
 ϵ = 0.1 # cutoff for aggregators
 w = 1.0/N # selection strength
 u_s = 1.0/N # mutation rate between strategies
-u_p = 10.0/N # error rate in choosing action
-u_a = 10.0/N # error rate in assigning reputation
+u_p = 1.0/N # error rate in choosing action
+u_a = 1.0/N # error rate in assigning reputation
 
 sets = equal_sets(N, M, K)
 game = Game(b, c, δ, ϵ, w, u_s, u_p, u_a, "db")
-pop = Population(sets, game, true)
+pop = Population(sets, game, false)
 
-num_gens = 10
+num_gens = 100
 total_interactions = 2.0*sum([length(x) for x in sets.set_pairs])
 
 total_cooperation = Float64[]
@@ -62,12 +62,12 @@ for g in 1:num_gens
 	[gen_means[x+1] += mean(pop.fitnesses[pop.strategies .== x]) for x in 0:2]
 	push!(strat_fitness_means, gen_means)
 end
-
-strategy_freqs_array = zeros(Float64, num_gens, 3)
-fitness_means_array = zeros(Float64, num_gens, 3)
-for g in 1:num_gens
-	strategy_freqs_array[g,:] = strategy_freqs[g]
-	fitness_means_array[g,:] = strat_fitness_means[g]
-end
-
-strat_ids = "compartmentalizer", "forgiving", "draconian"
+#
+# strategy_freqs_array = zeros(Float64, num_gens, 3)
+# fitness_means_array = zeros(Float64, num_gens, 3)
+# for g in 1:num_gens
+# 	strategy_freqs_array[g,:] = strategy_freqs[g]
+# 	fitness_means_array[g,:] = strat_fitness_means[g]
+# end
+#
+# strat_ids = "compartmentalizer", "forgiving", "draconian"
