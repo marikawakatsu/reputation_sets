@@ -214,5 +214,37 @@ Some initial observations:
     \label{fig:prelim_12}
 \end{figure}
 
+\clearpage
+
+\subsection*{Longer time series}
+
+Following are some longer simulation runs.
+We let the simulation persist for $10^6$ Moran generations after equilibration.
+We also vary $u_a$ and $u_p$, the error rate in assigning reputation and choosing action, respectively.
+With these parameter values, each run takes about $6$ hours.
+It is intriguing to note that at lower error rate values, the frequency of cooperation is higher, but there is less pressure to be forgiving: compartmentalizers and draconian aggregators periodically rise to high frequency.
+
+\clearpage
+
+\begin{figure}
+    \includegraphics[width=0.80\textwidth]{../figures/long_sim_1.pdf}
+    \caption{Same parameters as figure \ref{fig:prelim_1}, but run for $10^6$ Moran generations after equilibration.}
+    \label{fig:long_sim_1}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.80\textwidth]{../figures/long_sim_2.pdf}
+    \caption{Same parameters as figure \ref{fig:long_sim_1}, but $u_a$ is increased to $0.1$.}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.80\textwidth]{../figures/long_sim_3.pdf}
+    \caption{Same parameters as figure \ref{fig:long_sim_1}, but $u_p$ is increased to $0.1$.}
+\end{figure}
+
+\begin{figure}
+    \includegraphics[width=0.80\textwidth]{../figures/long_sim_4.pdf}
+    \caption{Same parameters as figure \ref{fig:long_sim_1}, but both $u_a$ and $u_p$ are increased to $0.1$.}
+\end{figure}
 
 \end{document}

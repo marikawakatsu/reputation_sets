@@ -1,0 +1,42 @@
+{
+  "N":
+  {
+    "value": 100
+  },
+  "M":
+  {
+    "value": [3]
+  },
+  "K":
+  {
+    "value": [2]
+  },
+  "b":
+  {
+    "value": 1.0
+  },
+  "c":
+  {
+    "value": [0.1]
+  },
+  "u_a":
+  {
+    "value": [0.01, 0.1]
+  },
+  "u_p":
+  {
+    "value": [0.01, 0.1]
+  },
+  "num_samples":
+  {
+    "value": 10000
+  },
+  "num_trials":
+  {
+    "value": 1
+  },
+  "output":
+  {
+    "value": "output/reputation_long_trajectory.csv"
+  }
+}
