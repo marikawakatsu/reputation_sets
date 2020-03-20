@@ -18,16 +18,16 @@
 # 6. In the next round, use the output of 4 to generate new reputation scores.
 # 7. Goto 3 and repeat.
 
-using Revise, StatsBase, PyPlot, Profile
+using Revise, StatsBase, Statistics, PyPlot, Profile
 
 using ReputationSets
 
 b = 1.0 # benefit to cooperating
 c = 0.9 # cost to cooperating
 
-N = 100 # population size
-M = 5 # number of sets
-K = 2
+N = 5 # population size
+M = 1 # number of sets
+K = 1
 
 δ = 0.0 # how much do aggregators favor their own set membership?
 ϵ = 0.1 # cutoff for aggregators
@@ -38,9 +38,9 @@ u_a = 1.0/N # error rate in assigning reputation
 
 sets = equal_sets(N, M, K)
 game = Game(b, c, δ, ϵ, w, u_s, u_p, u_a, "db")
-pop = Population(sets, game, false)
+pop = Population(sets, game, [1,2], false)
 
-num_gens = 10000
+num_gens = 100
 total_interactions = 2.0*sum([length(x) for x in sets.set_pairs])
 
 total_cooperation = Float64[]
@@ -50,11 +50,25 @@ strat_fitness_means = Array{Float64, 1}[]
 
 evolve!(pop)
 
+reputation_means = Array{Int64,1}[]
+reputation_stds = Array{Int64,1}[]
+
 for g in 1:num_gens
 	println("$g")
 	evolve!(pop, 1)
 	push!(total_cooperation, sum(pop.prev_actions)/total_interactions)
 	push!(fitness_means, mean(pop.fitnesses))
+	#tmp_reputations = zeros(pop.sets.N, pop.sets.K)
+	tmp_reputations = [Int64[] for i in 1:pop.sets.N]
+	for k in 1:pop.sets.M
+		for j in pop.sets.set_members[k]
+			if pop.sets.h[j,k]
+				push!(tmp_reputations[j], pop.reputations[k, j])
+			end
+		end
+	end
+	rep_means = [mean(x) for x in tmp_reputations]
+	rep_stds = [std(x) for x in tmp_reputations]
 	gen_freqs = zeros(Float64, 3)
 	[gen_freqs[pop.strategies[i]+1] += 1.0/pop.sets.N for i in 1:N]
 	push!(strategy_freqs, gen_freqs)

@@ -5,11 +5,11 @@
   },
   "M":
   {
-    "value": [4]
+    "value": [1]
   },
   "K":
   {
-    "value": [2,3]
+    "value": [1]
   },
   "b":
   {
@@ -21,11 +21,11 @@
   },
   "u_a":
   {
-    "value": [0.01, 0.1]
+    "value": [0.001]
   },
   "u_p":
   {
-    "value": [0.01, 0.1]
+    "value": [0.1]
   },
   "num_samples":
   {
@@ -35,8 +35,12 @@
   {
     "value": 1
   },
+  "types":
+  {
+    "value": ["all", "12", "13", "23"]
+  },
   "output":
   {
-    "value": "output/reputation_long_trajectory_M_K_test.csv"
+    "value": "output/simplified_M_K.csv"
   }
 }

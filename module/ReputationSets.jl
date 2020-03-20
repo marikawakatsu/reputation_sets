@@ -157,29 +157,33 @@ module ReputationSets
 		attitudes::Array{Int64, 3} # each individual's opinion of everyone else in each set
 		prev_actions::Array{Int64, 3} # the last action each individual took toward each other, in each set
 		fitnesses::Array{Float64, 1} # array of fitnesses
+		permitted_strategies::Array{Int64, 1} # which strategies are allowed to appear
 		generation::Int64 # current generation
 		verbose::Bool # turn this on for error tracking
 
 		# constructor if sets and game are already specified
 		function Population(
 			sets::Sets,
-			game::Game
+			game::Game,
+			initial_strategies::Array{Int64, 1}=[0,1,2],
+			verbose::Bool=false
 			)
 			# begin by initializing the population with random strategies
-			strategies = rand(collect(0:2), sets.N)
+			strategies = rand(initial_strategies, sets.N)
 			reputations = zeros(Int64, sets.M, sets.N) # everyone's reputation, etc. starts at zero
 			attitudes = zeros(Int64, sets.M, sets.N, sets.N)
 			prev_actions = zeros(Int64, sets.M, sets.N, sets.N)
 			fitnesses = zeros(Float64, sets.N)
+			permitted_strategies = initial_strategies
 			generation = 0
-			return new(sets, game, strategies, reputations, attitudes, prev_actions, fitnesses, generation, false)
+			return new(sets, game, strategies, reputations, attitudes, prev_actions, fitnesses, permitted_strategies, generation, verbose)
 		end
 
 		# same constructor as above, but allows error tracking to be set
 		function Population(
 			sets::Sets,
 			game::Game,
-			verbose::Bool
+			verbose::Bool=false
 			)
 			# begin by initializing the population with random strategies
 			strategies = rand(collect(0:2), sets.N)
@@ -187,8 +191,9 @@ module ReputationSets
 			attitudes = zeros(Int64, sets.M, sets.N, sets.N)
 			prev_actions = zeros(Int64, sets.M, sets.N, sets.N)
 			fitnesses = zeros(Float64, sets.N)
+			permitted_strategies = collect(0:2)
 			generation = 0
-			return new(sets, game, strategies, reputations, attitudes, prev_actions, fitnesses, generation, verbose)
+			return new(sets, game, strategies, reputations, attitudes, prev_actions, fitnesses, permitted_strategies, generation, verbose)
 		end
 	end
 
@@ -253,7 +258,7 @@ module ReputationSets
 		if rand() < update_function
 			if rand() < pop.game.u_s
 				# this is where we allow the invadee to mutate
-				pop.strategies[invadee] = rand(filter(x->x!=pop.strategies[invader], collect(0:2)))
+				pop.strategies[invadee] = rand(filter(x->x!=pop.strategies[invader], pop.permitted_strategies))
 				if pop.verbose println("mutating $invadee to strategy $(pop.strategies[invadee])") end
 			else
 				pop.strategies[invadee] = pop.strategies[invader]

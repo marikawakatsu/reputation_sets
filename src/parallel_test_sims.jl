@@ -168,14 +168,36 @@ function main(args)
 			strategy_freqs = Array{Float64, 1}[]
 			strat_fitness_means = Array{Float64, 1}[]
 
-			evolve!(pop)
-
 			evolve!(pop, N^2)
+
+			set_reputation_means = Float64[]
+			reputation_means = Float64[]
+			reputation_stds = Float64[]
 
 			for g in 1:num_samples
 				evolve!(pop, sampling_interval)
 				push!(total_cooperation, sum(pop.prev_actions)/total_interactions)
 				push!(fitness_means, mean(pop.fitnesses))
+				tmp_reputations = [Int64[] for i in 1:pop.sets.N]
+				tmp_set_reputations = [Int64[] for i in 1:pop.sets.M]
+				for k in 1:pop.sets.M
+					for j in pop.sets.set_members[k]
+						if pop.sets.h[j,k]
+							push!(tmp_reputations[j], pop.reputations[k, j])
+							push!(tmp_set_reputations[k], pop.reputations[k, j])
+						end
+					end
+				end
+				set_rep_mean = [mean(x) for x in tmp_set_reputations]
+				rep_mean = [mean(x) for x in tmp_reputations]
+				if K > 1
+					rep_std = mean([std(x) for x in tmp_reputations])
+				else
+					rep_std = 0.0
+				end
+				push!(reputation_means, mean(rep_mean))
+				push!(reputation_stds, mean(rep_std))
+				push!(set_reputation_means, mean(set_rep_mean))
 				gen_freqs = zeros(Float64, 3)
 				[gen_freqs[pop.strategies[i]+1] += 1.0/pop.sets.N for i in 1:N]
 				push!(strategy_freqs, gen_freqs)
@@ -195,6 +217,9 @@ function main(args)
 			pard["fitness_means"] = fitness_means
 			pard["strategy_freqs"] = strategy_freqs_array
 			pard["total_cooperation"] = total_cooperation
+			pard["set_reputation_means"] = set_reputation_means
+			pard["reputation_means"] = reputation_means
+			pard["reputation_stds"] = reputation_stds
 
             # return data to master process
             put!(results, pard)
@@ -252,4 +277,4 @@ end
 
 #main(ARGS)
 
-main(["--input", "submit/long_trajectories_M_K.json"])
+main(["--input", "submit/simplified_M_K.json"])
