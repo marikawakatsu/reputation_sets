@@ -1,0 +1,194 @@
+\documentclass[13pt]{amsart}
+
+\usepackage{amsfonts,latexsym,amsthm,amssymb,amsmath,amscd,euscript}
+\usepackage{fullpage}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{hyperref}
+\usepackage{mathtools}
+\usepackage{charter}
+\usepackage{natbib}
+
+\usepackage[dvipsnames]{xcolor}
+\usepackage[usenames,dvipsnames]{pstricks}
+
+\usepackage{hyperref}
+\hypersetup{
+    pdffitwindow=false,            % window fit to page
+    pdfstartview={Fit},            % fits width of page to window
+    pdftitle={Notes on ReputationSets},     % document title
+    pdfauthor={Taylor Kessinger},         % author name
+    pdfsubject={},                 % document topic(s)
+    pdfnewwindow=true,             % links in new window
+    colorlinks=true,               % coloured links, not boxed
+    linkcolor=OrangeRed,      % colour of internal links
+    citecolor=ForestGreen,       % colour of links to bibliography
+    filecolor=Orchid,            % colour of file links
+    urlcolor=Cerulean           % colour of external links
+}
+
+\newcommand{\B}{\mathcal{B}}
+\newcommand{\C}{\mathcal{C}}
+
+\begin{document}
+
+\section*{Some simplified \texttt{ReputationSets} simulation results}
+
+These are more early simulation results from \texttt{ReputationSets}.
+
+Simulation code, as always, can be found at
+\url{https://github.com/tkessinger/reputation_sets}.
+
+A brief overview:
+$N$ individuals are organized into $M$ sets.
+Each individual, furthermore, belongs to $K$ of those $M$ sets (randomly assigned for now).
+In each set, individuals then play a donation game with every other individual in that set.
+(This means individuals who share more than one set with another individual will play the donation game with them more than once.)
+
+Each individual has a public \emph{reputation} within each set, and individuals have \emph{strategies} for aggregating those reputations into (what I am calling) \emph{attitudes}.
+The \emph{attitude} determines what strategy they play in each set: individual $i$ uses a stern judging/DISC norm for determining which strategy to play based on $i$'s attitude toward player $j$.
+Each individual has one of three rules for determining attitudes:
+\begin{itemize}
+    \item \emph{compartmentalizer}.
+    $i$'s action toward $j$ in set $k$ is determined solely by $j$'s public reputation \emph{in set} $k$.
+    \item \emph{forgiving aggregator}.
+    If $j$ has a \emph{good} reputation in at least one set, $i$ will cooperate with them in all sets.
+    Else, $i$ will defect.
+    \item \emph{draconian aggregator}.
+    If $j$ has a \emph{bad} reputation in at least one set, $i$ will defect with them in all sets.
+    Else, $i$ will cooperate.
+\end{itemize}
+There is an error rate $u_p$ of choosing the wrong action and $u_a$ of assigning the wrong (public) reputation.
+Individuals then follow a death-birth rule for updating their assessment strategy (with mutation probability $u_a$ and selection strength $w$).
+We summarize these parameters in table \ref{tab:param_table}.
+\begin{center}
+    \begin{table}[h]
+        \begin{tabular}{| c | l |}
+        \hline
+        parameter & meaning \\
+        \hline
+         $N$ & total population size \\
+         $M$ & total number of sets \\
+         $K$ & number of sets each player belongs to \\
+         $b$ & benefit to cooperation \\
+         $c$ & cost to cooperation \\
+         $w$ & strength of selection \\
+         $u_p$ & error rate in choosing action \\
+         $u_a$ & error rate in assigning (public) reputation \\
+         $u_s$ & mutation rate between assessment strategies \\
+         \hline
+        \end{tabular}
+        \caption{Summary of simulation parameters.}
+    \label{tab:param_table}
+    \end{table}
+\end{center}
+
+Following are some initial serial simulation results (averaged over multiple simulation runs), as well as some individual time series from simulations.
+
+\clearpage
+
+\subsection*{Serial simulations}
+
+We varied $M = K \in \{1, 2, 3\}$ and tracked the frequencies of each individual type, as well as the proportion of total interactions in which individuals chose to cooperate, and the mean and standard deviation of reputations in the population.
+In these simulations we set $N = 100$, $u_p = 0.1$, $u_a = 0.1/N$, $c = 0.1$, and $b = 1$.
+Each different page represents different permitted strategies.
+
+Presented are ``glued together'' trajectories from several different simulation runs (dotted lines denote different simulations).
+
+\subsection*{Differences from previous simulations}
+
+In the past, we had mistakenly been assigning the payoff matrix as
+\begin{equation}
+    a_{ij} =
+    \begin{pmatrix}
+        0 & -c \\
+        b & b-c
+    \end{pmatrix}
+\end{equation}
+instead of the correct
+\begin{equation}
+    a_{ij} =
+    \begin{pmatrix}
+        0 & b \\
+        -c & b-c
+    \end{pmatrix}.
+\end{equation}
+It is easy to see how this led to problems.
+This issue was identified by observing that, when \texttt{AllC} was included as a strategy, it consistently beat all other strategies, including \texttt{AllD}.
+Fixing the payoff matrix removes this problem.
+We now find, somewhat more intuitively, that compartmentalizers beat aggregators, but draconian aggregators beat forgiving aggregators.
+It is interesting (though perhaps expected) to observe that when only aggregators are present (and hence draconians dominate), cooperation is \emph{very} low.
+
+\subsection*{Some ideas on how to proceed}
+
+Compartmentalizers winning in every situation is certainly not a very exciting result, but some possible extensions we might consider include:
+\begin{enumerate}
+    \item Compartmentalization in practice incurs a cognitive load.
+    What happens if we include this load as a component of fitness (e.g., a penalty for each bit of information that must be remembered)?
+    What happens if compartmentalizers sometimes \emph{fail} to compartmentalize, so they mistakenly punish or reward individuals in the wrong contexts?
+    \item All sets currently factor equally into fitness.
+    What happens if we relax this assumption, so that behavior in one set is more important than in others?
+    \item In these simulations we have $M = K$, i.e., everyone is in every set.
+    What happens if $K < M$?
+    \item We should still look at what happens if $u_p$ and $u_a$ are allowed to vary, though I expect compartmentalizers will still tend to win.
+\end{enumerate}
+\clearpage
+
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_1_strategies_123_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_2_strategies_123_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_3_strategies_123_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_1_strategies_12_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_2_strategies_12_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_3_strategies_12_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_1_strategies_13_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_2_strategies_13_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_3_strategies_13_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_1_strategies_23_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_2_strategies_23_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+\begin{figure}[h]
+    \includegraphics[width=0.5\textwidth]{../project1_simplified_figures/long_sim_M_3_strategies_23_redo.pdf}
+%    \label{fig:prelim_type_freq}
+\end{figure}
+
+\end{document}

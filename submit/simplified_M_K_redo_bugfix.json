@@ -25,18 +25,18 @@
   },
   "num_samples":
   {
-    "value": 10000
+    "value": 100
   },
   "num_trials":
   {
-    "value": 1
+    "value": 10
   },
   "permitted_strategies":
   {
-    "value": ["all", "01", "02", "12"]
+    "value": ["123", "12", "13", "23"]
   },
   "output":
   {
-    "value": "output/simplified_M_K.csv"
+    "value": "output/simplified_M_K_redo_bugfix.csv"
   }
 }

@@ -25,22 +25,24 @@ using ReputationSets
 b = 1.0 # benefit to cooperating
 c = 0.1 # cost to cooperating
 
-N = 10 # population size
+N = 4 # population size
 M = 1 # number of sets
 K = 1
 
 δ = 0.0 # how much do aggregators favor their own set membership?
 ϵ = 0.1 # cutoff for aggregators
 w = 1.0/N # selection strength
-u_s = 1.0/N # mutation rate between strategies
-u_p = 1.0/N # error rate in choosing action
-u_a = 1.0/N # error rate in assigning reputation
+u_s = 0.1/N # mutation rate between strategies
+u_p = 0.0/N # error rate in choosing action
+u_a = 0.0/N # error rate in assigning reputation
+
+verbose = true
 
 sets = equal_sets(N, M, K)
 game = Game(b, c, δ, ϵ, w, u_s, u_p, u_a, "db")
-pop = Population(sets, game, false)
+pop = Population(sets, game, [3,4], verbose)
 
-num_gens = 100
+num_gens = 2
 total_interactions = 2.0*sum([length(x) for x in sets.set_pairs])
 
 total_cooperation = Float64[]
@@ -55,10 +57,10 @@ for g in 1:num_gens
 	evolve!(pop, 1)
 	push!(total_cooperation, sum(pop.prev_actions)/total_interactions)
 	push!(fitness_means, mean(pop.fitnesses))
-	gen_freqs = zeros(Float64, 3)
+	gen_freqs = zeros(Float64, 5)
 	[gen_freqs[pop.strategies[i]+1] += 1.0/pop.sets.N for i in 1:N]
 	push!(strategy_freqs, gen_freqs)
-	gen_means = zeros(Float64, 3)
+	gen_means = zeros(Float64, 5)
 	[gen_means[x+1] += mean(pop.fitnesses[pop.strategies .== x]) for x in 0:2]
 	push!(strat_fitness_means, gen_means)
 end

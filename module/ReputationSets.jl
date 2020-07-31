@@ -129,7 +129,7 @@ module ReputationSets
 			update_rule::String
 			)
 			return new(b, c, δ, ϵ, w, u_s, u_p, u_a,
-				update_rule, [0.0 -c; b b-c])
+				update_rule, [0.0 b; -c b-c])
 		end
 
 		function Game(
@@ -143,7 +143,7 @@ module ReputationSets
 			u_a::Float64,
 			)
 			return new(b, c, δ, ϵ, w, u_s, u_p, u_a,
-				"death-birth", [0.0 -c; b b-c])
+				"death-birth", [0.0 b; -c b-c])
 		end
 	end
 
@@ -165,7 +165,7 @@ module ReputationSets
 		function Population(
 			sets::Sets,
 			game::Game,
-			initial_strategies::Array{Int64, 1}=[0,1,2],
+			initial_strategies::Array{Int64, 1}=[1,2,3,4,5],
 			verbose::Bool=false
 			)
 			# begin by initializing the population with random strategies
@@ -186,12 +186,12 @@ module ReputationSets
 			verbose::Bool=false
 			)
 			# begin by initializing the population with random strategies
-			strategies = rand(collect(0:2), sets.N)
+			strategies = rand(collect(1:5), sets.N)
 			reputations = zeros(Int64, sets.M, sets.N) # everyone's reputation, etc. starts at zero
 			attitudes = zeros(Int64, sets.M, sets.N, sets.N)
 			prev_actions = zeros(Int64, sets.M, sets.N, sets.N)
 			fitnesses = zeros(Float64, sets.N)
-			permitted_strategies = collect(0:2)
+			permitted_strategies = collect(1:5)
 			generation = 0
 			return new(sets, game, strategies, reputations, attitudes, prev_actions, fitnesses, permitted_strategies, generation, verbose)
 		end
@@ -234,7 +234,7 @@ module ReputationSets
 		if pop.verbose println("all fitnesses are $(pop.fitnesses)") end
 		if rand() < pop.game.u_s
 			# this is where we allow the invadee to mutate
-			pop.strategies[invadee] = rand(filter(x->x!=pop.strategies[invader], collect(0:2)))
+			pop.strategies[invadee] = rand(filter(x->x!=pop.strategies[invader], pop.permitted_strategies))
 			if pop.verbose println("mutating $invadee to strategy $(pop.strategies[invadee])") end
 		else
 			pop.strategies[invadee] = pop.strategies[invader]
@@ -309,9 +309,16 @@ module ReputationSets
 				# check i's attitude toward j within set k
 				# with probability 1-u_p, they cooperate if j is good and defect if j is bad
 				# with probability u_p, the opposite
-				rand() > pop.game.u_p ? i_action = pop.attitudes[k,i,j] : i_action = 1 - pop.attitudes[k,i,j]
+				#rand() > pop.game.u_p ? i_action = pop.attitudes[k,i,j] : i_action = 1 - pop.attitudes[k,i,j]
 				# repeat with j
-				rand() > pop.game.u_p ? j_action = pop.attitudes[k,j,i] : j_action = 1 - pop.attitudes[k,j,i]
+				#rand() > pop.game.u_p ? j_action = pop.attitudes[k,j,i] : j_action = 1 - pop.attitudes[k,j,i]
+
+				# the "minimum" here essentially makes it so that defectors never accidentally cooperate
+				# this is what is done in the theoretical literature
+				rand() > pop.game.u_p ? i_action = pop.attitudes[k,i,j] : i_action = minimum([1 - pop.attitudes[k,i,j],0])
+				# repeat with j
+				rand() > pop.game.u_p ? j_action = pop.attitudes[k,j,i] : j_action = minimum([1 - pop.attitudes[k,j,i],0])
+
 				if pop.verbose println("$i's attitude toward $j is $(pop.attitudes[k,i,j]), so $i does $i_action") end
 				if pop.verbose println("$j's attitude toward $i is $(pop.attitudes[k,j,i]), so $j does $j_action") end
 				if pop.verbose println("$i earns a payoff of $(pop.game.A[i_action+1, j_action+1])") end
@@ -380,23 +387,39 @@ module ReputationSets
 		# determine the attitude of i toward j in set k
 		# based on their set memberships and i's public reputations
 
-		# 0: compartmentalizer
+		# 1: compartmentalizer
 		# individuals get treated according to their within-set reputation
 
-		# 1: forgiving aggregator
+		# 2: forgiving aggregator
 		# if an individual has a good reputation in at least one set,
 		# their reputation is good overall
 
-		# 2: draconian aggregator
+		# 3: draconian aggregator
 		# if an individual has a bad reputation in at least one set,
 		# their reputation is bad overall
+
+		# 4: cooperator
+		# always treats individuals as having a good reputation
+		# and hence always cooperates with them
+
+		# 5: defector
+		# always treats everyone as having a bad reputation
+		# and hence always defects against them
+
+		# 5: wild card cooperator
+		# picks a set to defect in
+		# and cooperates in all others
+
+		# 6: wild card defector
+		# picks a set to cooperate in
+		# and defects in all others
 		if pop.verbose println("adjusting $i's attitude toward $j in set $k: $i's strategy is $(pop.strategies[i])") end
-		if pop.strategies[i] == 0
+		if pop.strategies[i] == 1
 			# compartmentalizer
 			# i's attitude about j in set k is j's reputation in set k
 			if pop.verbose println("$i is a compartmentalizer. attitude toward $j in set $k is $(pop.reputations[k,j])") end
 			return pop.reputations[k,j]
-		elseif pop.strategies[i] == 1
+		elseif pop.strategies[i] == 2
 			# forgiving aggregator
 			# get j's reputations
 			all_reputations = pop.reputations[:,j]
@@ -406,7 +429,7 @@ module ReputationSets
 			new_reputation = aggregator_reputation(pop.game.δ, pop.game.ϵ, all_reputations, pop.sets.h[i,:], pop.sets.h[j,:], pop.verbose)
 			if pop.verbose println("$i is a forgiving aggregator. $j's reputations look like $all_reputations. attitude is $new_reputation") end
 			return new_reputation
-		elseif pop.strategies[i] == 2
+		elseif pop.strategies[i] == 3
 			# draconian aggregator
 			# get j's reputations
 			all_reputations = pop.reputations[:,j]
@@ -416,6 +439,16 @@ module ReputationSets
 			new_reputation = aggregator_reputation(pop.game.δ, 1-pop.game.ϵ, all_reputations, pop.sets.h[i,:], pop.sets.h[j,:], pop.verbose)
 			if pop.verbose println("$i is a draconian aggregator. $j's reputations look like $all_reputations. attitude is $new_reputation") end
 			return new_reputation
+		elseif pop.strategies[i] == 4
+			# cooperator
+			# always has a good attitude about everyone
+			if pop.verbose println("$i is a cooperator: their attitude toward $j is automatically 1") end
+			return 1
+		elseif pop.strategies[i] == 5
+			# defector
+			# always has a bad attitude about everyone
+			if pop.verbose println("$i is a defector: their attitude toward $j is automatically 0") end
+			return 0
 		end
 	end
 
